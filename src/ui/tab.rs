@@ -145,7 +145,7 @@ impl TabUI {
         state: &C1BState,
     ) -> Option<TabUIEvents> {
         let is_active = index == state.tabmanager.active_tab_id;
-        ui.add_space(TabUISizes::TabSpacing.size()); // add left spacing before tab
+        ui.add_space(TabUISizes::TabSpacing.size());
         // Allocate space for the tab
         let tab_size = egui::vec2(
             TabUISizes::TabButtonWidth.size(),
@@ -161,30 +161,12 @@ impl TabUI {
             TabUI::render_inactive_tab_background(ui, &resp);
         }
 
-        // Paint tab text
-        let font_id = egui::FontId::proportional(TabUISizes::TabFontSize.size());
-        let text_color = if is_active {
-            TabUIColors::ActiveText.color()
-        } else {
-            TabUIColors::NonActiveText.color()
-        };
-
-        if let Some(title) = &tab.title {
-            let text_pos = rect.min + egui::vec2(10.0, tab_size.y / 2.0);
-            ui.painter().text(
-                text_pos,
-                egui::Align2::LEFT_CENTER,
-                title,
-                font_id,
-                text_color,
-            );
-        }
+        TabUI::render_tab_text(ui, tab, rect, tab_size, is_active, 180.0);
 
         let close_clicked = TabUI::render_close_button(ui, &resp);
 
         // Paint divider between tabs
         TabUI::render_tab_divider(ui, index, &rect, state);
-        let close_clicked = TabUI::render_close_button(ui, &resp);
 
         // if close_clicked {
         //     Some(TabUIActions::Close)
@@ -416,46 +398,56 @@ impl TabUI {
     }
     pub fn render_tab_text(
         ui: &mut egui::Ui,
-        resp: &egui::Response,
-        index: usize,
-        state: &C1BState,
+        tab: &Tab,
+        rect: egui::Rect,
+        tab_size: egui::Vec2,
+        is_active: bool,
+        max_text_width: f32,
     ) {
         let font_id = egui::FontId::proportional(TabUISizes::TabFontSize.size());
-        let text_color = if index == state.tabmanager.active_tab_id {
+        let text_color = if is_active {
             TabUIColors::ActiveText.color()
         } else {
             TabUIColors::NonActiveText.color()
         };
 
-        //text area with fixed width
-        let text_start = resp.rect.left_center() + egui::vec2(10.0, 0.0);
-        let text_width = 170.0;
-        let text_rect = egui::Rect::from_min_size(
-            text_start - egui::vec2(0.0, 10.0),
-            egui::vec2(text_width, 20.0),
-        );
+        if let Some(title) = &tab.title {
+            let text_pos = rect.min + egui::vec2(10.0, tab_size.y / 2.0);
 
-        // Set clip rectangle to hide overflow
-        ui.set_clip_rect(text_rect);
+            // Measure the full text to see if it fits
+            let full_text_size = ui
+                .painter()
+                .layout_no_wrap(title.clone(), font_id.clone(), text_color)
+                .size();
 
-        let title = state
-            .tabmanager
-            .tabs
-            .index(index)
-            .title
-            .as_deref() // Option<&str>
-            .unwrap_or("<untitled>");
+            let display_text = if full_text_size.x > max_text_width {
+                // Truncate text by measuring character by character
+                let mut truncated = String::new();
+                for ch in title.chars() {
+                    let test_text = format!("{}{}...", truncated, ch);
+                    let test_size = ui
+                        .painter()
+                        .layout_no_wrap(test_text.clone(), font_id.clone(), text_color)
+                        .size();
 
-        ui.painter().text(
-            text_start,
-            egui::Align2::LEFT_CENTER,
-            title, // now a &str
-            font_id,
-            text_color,
-        );
+                    if test_size.x > max_text_width {
+                        break;
+                    }
+                    truncated.push(ch);
+                }
+                format!("{}...", truncated)
+            } else {
+                title.clone()
+            };
 
-        // Reset clip rectangle to original
-        ui.set_clip_rect(resp.rect);
+            ui.painter().text(
+                text_pos,
+                egui::Align2::LEFT_CENTER,
+                &display_text,
+                font_id,
+                text_color,
+            );
+        }
     }
 
     fn render_close_button(ui: &mut egui::Ui, resp: &egui::Response) -> bool {

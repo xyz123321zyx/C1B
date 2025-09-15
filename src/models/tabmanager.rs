@@ -20,7 +20,7 @@ impl TabManager {
         // Create the first tab
         let first_tab = Tab::new(
             1,
-            "Tab 1".to_string(),
+            "TabghhhhhhhhhhhhhhhhsdfaadasggggggggadrhgasrghhhhhhhhhhhhhhhH 1".to_string(),
             "https://ztna14.cpcgw01.cachatto.co.in".to_string(),
             "https://ztna14.cpcgw01.cachatto.co.in/favicon.ico".to_string(),
         );
