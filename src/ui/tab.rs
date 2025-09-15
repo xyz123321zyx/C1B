@@ -130,7 +130,7 @@ impl TabUI {
 
                     // Space and plus button
                     ui.add_space(8.0);
-                    TabUI::render_plus_button(ui, state);
+                    let plus_button = TabUI::render_plus_button(ui, state);
                 });
 
                 // Handle tab closure
@@ -153,8 +153,6 @@ impl TabUI {
         );
         let rect = egui::Rect::from_min_size(ui.cursor().min, tab_size);
         let resp = ui.allocate_rect(rect, egui::Sense::click());
-
-        // Paint tab background
         if is_active {
             TabUI::render_active_tab_background(ui, &resp);
         } else {
@@ -165,16 +163,17 @@ impl TabUI {
 
         let close_clicked = TabUI::render_close_button(ui, &resp);
 
-        // Paint divider between tabs
         TabUI::render_tab_divider(ui, index, &rect, state);
 
-        // if close_clicked {
-        //     Some(TabUIActions::Close)
-        // } else if resp.clicked() {
-        //     Some(TabUIActions::Activate)
-        // } else {
-        //     None
-        // }
+        if close_clicked {
+            // Some(TabUIActions::Close)
+            println!("close Tab clicked {}", index);
+        } else if resp.clicked() {
+            // Some(TabUIActions::Activate)
+            println!("Tab clicked {}", index);
+        } else {
+            // None
+        }
         None
     }
 
@@ -488,7 +487,7 @@ impl TabUI {
         close_resp.clicked()
     }
 
-    pub fn render_plus_button(ui: &mut egui::Ui, state: &C1BState) {
+    pub fn render_plus_button(ui: &mut egui::Ui, state: &C1BState) -> bool {
         // println!("+");
         let plus_button = ui.add_sized(
             [30.0, 30.0],
@@ -506,8 +505,6 @@ impl TabUI {
         //             ui.scroll_to_rect(plus_button.rect, Some(egui::Align::Center));
         //             // state.scroll_to_end = false;
         //         }
-        //         if plus_button.clicked() {
-        // println!("Clicked");
-        //         }
+        plus_button.clicked()
     }
 }
