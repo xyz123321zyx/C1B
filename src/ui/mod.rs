@@ -6,3 +6,6 @@ pub use tab::TabUI;
 
 pub mod navbar;
 pub use navbar::NavBarUI;
+
+pub mod webview;
+pub use webview::WebViewUI;

@@ -1,25 +1,18 @@
-use std::ops::Index;
+use std::{ops::Index, sync::mpsc::Sender};
 
 use crate::{
     debugger,
+    events::{Events, TabUIEvents},
     models::{C1BState, Tab, state, tab},
 };
-use eframe::egui;
 use eframe::egui::Widget;
+use eframe::egui::{self, Event};
 
 pub struct TabUI {
     colors: TabUIColors,
-    actions: TabUIEvents,
+    events: TabUIEvents,
     sizes: TabUISizes,
     scroll_to_end: bool,
-}
-
-pub enum TabUIEvents {
-    NewTab(String),
-    CloseTab(usize),
-    SwitchTab(usize),
-    RestoreTab(usize),
-    RestoreAllTab,
 }
 
 pub enum TabUIColors {
@@ -81,7 +74,7 @@ impl TabUIColors {
 }
 
 impl TabUI {
-    pub fn render_tab_bar(ui: &mut egui::Ui, state: &C1BState) {
+    pub fn render_tab_bar(ui: &mut egui::Ui, state: &C1BState, sender: &Sender<Events>) {
         // debugger::StateDebugger::print_debug_state(state);
         egui::Frame::none()
             .fill(self::TabUIColors::NonActive.color())
@@ -102,12 +95,12 @@ impl TabUI {
                 };
 
                 tab_frame.show(ui, |ui| {
-                    TabUI::render_scrollable_tabs(ui, state);
+                    TabUI::render_scrollable_tabs(ui, state, &sender);
                 });
             });
     }
 
-    pub fn render_scrollable_tabs(ui: &mut egui::Ui, state: &C1BState) {
+    pub fn render_scrollable_tabs(ui: &mut egui::Ui, state: &C1BState, sender: &Sender<Events>) {
         egui::ScrollArea::horizontal()
             .auto_shrink([false; 2])
             .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
@@ -116,25 +109,33 @@ impl TabUI {
 
                 ui.horizontal(|ui| {
                     // Render all tabs
-                    // debugger::StateDebugger::print_debug_state(state);
                     for (i, tab) in state.tabmanager.tabs.iter().enumerate() {
+                        if tab.is_closed {
+                            continue; // dont render the closed tabs
+                        }
                         let tab_response = TabUI::render_single_tab(ui, i, &tab, state);
-
-                        // if let Some(action) = tab_response {
-                        //     match action {
-                        //         TabUIActions::Close => tab_to_close = Some(i),
-                        //         TabUIActions::Activate => self.manager.active_index = i,
-                        //     }
-                        // }
+                        if let Some(event) = tab_response {
+                            match event {
+                                TabUIEvents::CloseTab(index) => {
+                                    sender.send(Events::Tab(TabUIEvents::CloseTab(index)));
+                                }
+                                TabUIEvents::SwitchTab(index) => {
+                                    sender.send(Events::Tab(TabUIEvents::SwitchTab(index)));
+                                }
+                                _ => {}
+                            }
+                        }
                     }
 
                     // Space and plus button
                     ui.add_space(8.0);
-                    let plus_button = TabUI::render_plus_button(ui, state);
+                    if TabUI::render_plus_button(ui, state, &sender) {
+                        sender.send(Events::Tab(TabUIEvents::NewTab(
+                            "ztna14.cpcgw01.cachatto.co.in".into(),
+                        )));
+                        sender.send(Events::Tab(TabUIEvents::Scroll(true)));
+                    }
                 });
-
-                // Handle tab closure
-                // self.handle_tab_closure(tab_to_close);
             });
     }
 
@@ -166,15 +167,13 @@ impl TabUI {
         TabUI::render_tab_divider(ui, index, &rect, state);
 
         if close_clicked {
-            // Some(TabUIActions::Close)
-            println!("close Tab clicked {}", index);
+            Some(TabUIEvents::CloseTab(index))
         } else if resp.clicked() {
-            // Some(TabUIActions::Activate)
-            println!("Tab clicked {}", index);
+            Some(TabUIEvents::SwitchTab(index))
         } else {
-            // None
+            None
         }
-        None
+        // None
     }
 
     pub fn render_active_tab_background(ui: &mut egui::Ui, resp: &egui::Response) {
@@ -458,10 +457,8 @@ impl TabUI {
             ),
         );
 
-        // Check if the close button area is hovered before drawing the button
         let is_hovered = ui.rect_contains_pointer(close_rect);
 
-        // Draw black background manually when hovered
         if is_hovered {
             ui.painter().rect_filled(
                 close_rect,
@@ -487,8 +484,12 @@ impl TabUI {
         close_resp.clicked()
     }
 
-    pub fn render_plus_button(ui: &mut egui::Ui, state: &C1BState) -> bool {
-        // println!("+");
+    pub fn render_plus_button(
+        ui: &mut egui::Ui,
+        state: &C1BState,
+        sender: &Sender<Events>,
+    ) -> bool {
+        ui.add_space(5.0);
         let plus_button = ui.add_sized(
             [30.0, 30.0],
             egui::Button::new(
@@ -500,11 +501,11 @@ impl TabUI {
             .fill(egui::Color32::from_rgb(211, 227, 253))
             .rounding(15.0),
         );
+        if state.scroll_to_end {
+            ui.scroll_to_rect(plus_button.rect, Some(egui::Align::Center));
+            sender.send(Events::Tab(TabUIEvents::Scroll(false)));
+        }
 
-        //         if state.scroll_to_end {
-        //             ui.scroll_to_rect(plus_button.rect, Some(egui::Align::Center));
-        //             // state.scroll_to_end = false;
-        //         }
         plus_button.clicked()
     }
 }

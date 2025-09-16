@@ -1,9 +1,9 @@
-use crate::models::{C1BState, state};
+use crate::{models::{state, C1BState}, events};
 
 pub struct StateDebugger {}
 
 impl StateDebugger {
-    pub fn state(state: &C1BState) {
+    pub fn print_state(state: &C1BState) {
         println!("State: {}", state);
     }
 
@@ -41,6 +41,14 @@ impl StateDebugger {
         } else {
             println!("New tab created: {}", id);
         }
+    }
+
+    pub fn print_msg_with_index(msg: &str, index: usize) {
+        println!("{}: {}", msg, index);
+    }
+
+    pub fn print_msg(msg: &str) {
+        println!("{}", msg);
     }
 
 }

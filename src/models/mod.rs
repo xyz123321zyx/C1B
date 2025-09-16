@@ -6,3 +6,6 @@ pub use tab::Tab;
 
 pub mod tabmanager;
 pub use tabmanager::TabManager;
+
+pub mod webviewmanager;
+pub use webviewmanager::WebViewManager;

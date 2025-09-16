@@ -1,7 +1,7 @@
 use eframe::egui::{self, ColorImage, TextureHandle};
 use std::sync::OnceLock;
 
-use crate::models::C1BState;
+use crate::{events::events::NavBarUIEvents, models::C1BState};
 
 pub struct NavBarUI {
     sizes: NavBarUISizes,
@@ -45,7 +45,7 @@ impl NavBarUIColors {
 
 // Back button with manual hover detection
 
-pub enum NavBarUIEvents {}
+
 
 // Include the icon bytes
 const HOME_ICON_BYTES: &[u8] = include_bytes!("../assets/icons/navbar/home.png");

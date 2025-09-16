@@ -2,19 +2,23 @@
 mod debugger;
 mod errors;
 mod models;
-mod msg;
+mod events;
 mod ui;
+mod tabmanager;
+mod tab;
+mod state;
+mod  event_handler;
 use eframe::{egui, NativeOptions};
 use image::GenericImageView;
 
 use crate::{
-    models::{C1BState, Tab, state},
+    models::{C1BState, Tab},
     ui::C1BUI,
 };
 
 fn main() {
     let state = C1BState::new();
-    debugger::StateDebugger::state(&state);
+    debugger::StateDebugger::print_state(&state);
     let image = image::open("src/assets/icons/app/Cachatto.ico").expect("Failed to open icon");
     let (width, height) = image.dimensions();
     let rgba = image.into_rgba8().into_raw();
